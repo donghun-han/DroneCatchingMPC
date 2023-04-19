@@ -38,7 +38,6 @@ void callback_state(const mavros_msgs::State::ConstPtr& msg)
 
 }
 
-
 int main(int argc, char **argv)
 {
   
@@ -78,11 +77,15 @@ int main(int argc, char **argv)
     vel_msg.twist.linear.y = 0;
     vel_msg.twist.linear.z = 0;
 
-    
     //takeoff to 0,0,1
     // and move based on the velocity message
 
-    
+    double radius = 7.0;
+    double freq_x = 0.5;
+    double freq_y = 0.5;
+    double time = 0.0;
+    double step = 1.0 / 30.0;
+ 
     static int print_count = 0;
     while(ros::ok())
     {
@@ -116,7 +119,24 @@ int main(int argc, char **argv)
             vel_msg.header.stamp = ros::Time::now();
             vel_msg.twist.linear.z = target_height - g_current_pose.pose.position.z;
             vel_pub.publish(vel_msg);
+        
+            // Calculate the x and y velocities of the infinity symbol
+            double vel_x = radius * freq_x * cos(freq_x * time);
+            double vel_y = radius * (freq_y * cos(freq_y * time) * cos(freq_y * time) - freq_y * sin(freq_y * time) * sin(freq_y * time));
+
+            // Update the velocity message
+            vel_msg.header.stamp = ros::Time::now();
+            vel_msg.twist.linear.x = vel_x;
+            vel_msg.twist.linear.y = vel_y;
+            vel_msg.twist.linear.z = 0;
+
+            // Publish the updated velocity message
+            vel_pub.publish(vel_msg);
+
+            // Update the time for the next iteration
+            time += step;
         }
+
 
         print_count++;
         if(print_count > 10)
